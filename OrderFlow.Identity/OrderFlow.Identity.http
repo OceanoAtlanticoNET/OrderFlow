@@ -1,0 +1,6 @@
+@OrderFlow.Identity_HostAddress = http://localhost:5137
+
+GET {{OrderFlow.Identity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
