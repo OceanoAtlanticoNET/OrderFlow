@@ -2,14 +2,18 @@ using Scalar.AspNetCore;
 using OrderFlow.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OrderFlow.Identity.Features.Auth;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// Add Aspire Service Defaults (OpenTelemetry, Health Checks, Service Discovery, Resilience)
+builder.AddServiceDefaults();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddAuthorization();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Add PostgreSQL DbContext with Aspire
 builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb");
@@ -40,16 +44,19 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 
 var app = builder.Build();
 
-// Apply migrations automatically on startup
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
-}
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    
+    foreach (var role in Roles.GetAll())
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+    
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
@@ -59,6 +66,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapDefaultEndpoints(); // Add health check endpoints
+app.MapRegisterUser();
 
 app.Run();

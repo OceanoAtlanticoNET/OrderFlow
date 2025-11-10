@@ -28,34 +28,146 @@ Este documento proporciona una guía paso a paso para implementar OrderFlow, dis
 
 **Objetivo:** Los estudiantes pueden registrar, iniciar sesión y autenticar usuarios
 
-### Paso 2.1: Crear Endpoints de API de Autenticación ⏭️ SIGUIENTE
+### Paso 2.1: Crear Feature de Registro de Usuarios ⏭️ SIGUIENTE
 
-**Archivos a Crear:**
-- `OrderFlow.Identity/Controllers/AuthController.cs`
-- `OrderFlow.Identity/DTOs/RegisterRequest.cs`
-- `OrderFlow.Identity/DTOs/LoginRequest.cs`
-- `OrderFlow.Identity/DTOs/AuthResponse.cs`
+**Arquitectura Orientada a Features:**
+- Organización vertical por funcionalidad (no por capas)
+- Cada feature es autónoma y contiene todo lo necesario
+- Uso de Minimal APIs con **TypedResults** (nativo de .NET)
+- Respuestas tipadas y type-safe
 
-**Endpoints de API a Implementar:**
+**Archivo Creado:**
+- `OrderFlow.Identity/Features/Auth/RegisterUser.cs`
+
+**Estructura de la Feature:**
 ```csharp
-POST /api/auth/register
-POST /api/auth/login  
-GET /api/auth/me
+public static class RegisterUser
+{
+    // Request & Response Records (dentro de la clase)
+    public sealed record Request(string Email, string Password, string FirstName, string LastName);
+    public sealed record Response(string UserId, string Email, string Message);
+    public sealed record ErrorResponse(IEnumerable<string> Errors);
+    
+    // Endpoint Registration (extensión para el builder)
+    public static IEndpointRouteBuilder MapRegisterUser(this IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapPost("/api/auth/register", HandleAsync)
+            .WithName("RegisterUser")
+            .WithTags("Authentication")
+            .WithOpenApi()
+            .Produces<Response>(201)
+            .Produces<ErrorResponse>(400)
+            .AllowAnonymous();
+        
+        return endpoints;
+    }
+    
+    // Handler con TypedResults (type-safe!)
+    private static async Task<Results<Created<Response>, BadRequest<ErrorResponse>>> HandleAsync(
+        Request request,
+        UserManager<IdentityUser> userManager,
+        ILogger<Request> logger,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. Validar request
+        var validationErrors = ValidateRequest(request);
+        if (validationErrors.Any())
+            return TypedResults.BadRequest(new ErrorResponse(validationErrors));
+        
+        // 2. Verificar si el usuario existe
+        var existingUser = await userManager.FindByEmailAsync(request.Email);
+        if (existingUser is not null)
+            return TypedResults.BadRequest(new ErrorResponse(["User already exists"]));
+        
+        // 3. Crear usuario
+        var user = new IdentityUser { ... };
+        var result = await userManager.CreateAsync(user, request.Password);
+        
+        if (!result.Succeeded)
+            return TypedResults.BadRequest(new ErrorResponse(result.Errors.Select(e => e.Description)));
+        
+        // 4. Asignar rol por defecto
+        await userManager.AddToRoleAsync(user, "Customer");
+        
+        // 5. Retornar respuesta tipada
+        var response = new Response(user.Id, user.Email, "User registered successfully");
+        return TypedResults.Created($"/api/auth/users/{user.Id}", response);
+    }
+    
+    // Validation (métodos de validación privados)
+    private static List<string> ValidateRequest(Request request) => ...
+}
 ```
 
-**Por Qué es Importante:**
-- Los estudiantes ven autenticación REAL funcionando
-- Pueden probar inmediatamente con la UI de Scalar
-- Base para todos los demás servicios
+**Configuración en Program.cs:**
+```csharp
+// Importar la feature
+using OrderFlow.Identity.Features.Auth;
+
+// En el app builder, mapear el endpoint
+app.MapRegisterUser();
+
+// Crear roles por defecto en startup
+await EnsureRolesAsync(roleManager); // Admin, Customer, Warehouse
+```
+
+**Endpoint Implementado:**
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+Response 201 Created:
+{
+  "userId": "abc123",
+  "email": "user@example.com",
+  "message": "User registered successfully. Please check your email to confirm your account."
+}
+
+Response 400 Bad Request:
+{
+  "errors": [
+    "Email is required",
+    "Password must be at least 8 characters long"
+  ]
+}
+```
+
+**Por Qué TypedResults (Nativo de .NET):**
+- ✅ **Type-Safe**: El compilador verifica los tipos de retorno
+- ✅ **OpenAPI**: Documentación automática precisa
+- ✅ **IntelliSense**: Mejor autocompletado en el IDE
+- ✅ **Performance**: Optimizado por el runtime de .NET
+- ✅ **Nativo**: No necesita librerías externas
+- ✅ **Results Union Type**: `Results<TResult1, TResult2>` es un union type discriminado
+
+**Ventajas del Enfoque:**
+- ✅ **Organización Clara**: Todo relacionado con registro está en un solo archivo
+- ✅ **Minimal APIs**: Aprovecha las características nativas de .NET 9
+- ✅ **TypedResults**: Type-safety completo en respuestas HTTP
+- ✅ **Testeable**: Fácil de probar cada componente
+- ✅ **Escalable**: Fácil agregar nuevas features sin tocar código existente
+- ✅ **OpenAPI**: Documentación automática con Scalar
 
 **Resultado Visible:** 
-✅ Registrar usuario vía Scalar → Login → Ver datos de usuario en PostgreSQL
+✅ Registrar usuario vía Scalar → Ver en PostgreSQL → Respuesta tipada con datos del usuario
 
 **Objetivos de Aprendizaje:**
-- Controllers de ASP.NET Core
-- Data Transfer Objects (DTOs)
-- Validación de modelos
-- API de Identity UserManager
+- Arquitectura orientada a features (Vertical Slice Architecture)
+- Minimal APIs en .NET 9
+- **TypedResults** para respuestas type-safe
+- **Results<T1, T2>** union types
+- Records inmutables
+- Extension methods
+- ASP.NET Core Identity UserManager
+- Inyección de dependencias
+- Logging estructurado
 
 ---
 
