@@ -13,7 +13,8 @@ var identityDb = postgres.AddDatabase("identitydb");
 // MICROSERVICES
 // ============================================
 var identityService = builder.AddProject<Projects.OrderFlow_Identity>("orderflow-identity")
-    .WithReference(identityDb);
+    .WithReference(identityDb)
+    .WaitFor(identityDb); // Wait for database to be ready before starting service
 
 // ============================================
 // FRONTEND - React App

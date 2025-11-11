@@ -44,9 +44,15 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 
 var app = builder.Build();
 
+// ============================================
+// AUTO-MIGRATE DATABASE ON STARTUP
+// ============================================
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+    
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     
     foreach (var role in Roles.GetAll())
