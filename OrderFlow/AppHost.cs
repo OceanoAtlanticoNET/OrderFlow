@@ -21,7 +21,8 @@ var identityService = builder.AddProject<Projects.OrderFlow_Identity>("orderflow
 // ============================================
 var frontendApp = builder.AddNpmApp("orderflow-web", "../orderflow.web", "dev")
     .WithReference(identityService)
-    .WithHttpEndpoint(port: 5173, env: "PORT")
+    .WithEnvironment("VITE_IDENTITY_URL", identityService.GetEndpoint("https"))
+    .WithHttpEndpoint(env: "PORT") // Let Aspire assign port dynamically
     .WithExternalHttpEndpoints()
     .PublishAsDockerFile();
 

@@ -18,6 +18,19 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+// ============================================
+// CORS CONFIGURATION
+// ============================================
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 // Add PostgreSQL DbContext with Aspire
 builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb");
 
@@ -106,6 +119,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(); // Must be before Authentication and Authorization
 
 app.UseAuthentication();
 app.UseAuthorization();
