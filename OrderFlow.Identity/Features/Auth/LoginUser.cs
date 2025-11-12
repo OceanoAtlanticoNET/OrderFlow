@@ -86,7 +86,7 @@ public static class LoginUser
         if (user is null)
         {
             logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-            return Results.Unauthorized();
+            return Results.BadRequest(new ErrorResponse(["Invalid email or password"]));
         }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
@@ -100,7 +100,7 @@ public static class LoginUser
         if (!result.Succeeded)
         {
             logger.LogWarning("Failed login attempt for email: {Email}", request.Email);
-            return Results.Unauthorized();
+            return Results.BadRequest(new ErrorResponse(["Invalid email or password"]));
         }
 
         // Get user roles

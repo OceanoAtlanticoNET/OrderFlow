@@ -19,10 +19,10 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">OrderFlow Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground">OrderFlow Dashboard</h1>
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
