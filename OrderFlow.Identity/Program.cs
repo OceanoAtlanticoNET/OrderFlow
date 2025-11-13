@@ -8,15 +8,32 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Asp.Versioning;
+using Microsoft.OpenApi.Models;
+using OrderFlow.Identity.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Aspire Service Defaults (OpenTelemetry, Health Checks, Service Discovery, Resilience)
 builder.AddServiceDefaults();
 
-// Configure multiple OpenAPI documents for different versions
-builder.Services.AddOpenApi("v1");
-builder.Services.AddOpenApi("v2");
+// Configure OpenAPI documents for different versions with JWT Bearer authentication
+builder.Services.AddOpenApi("v1", options =>
+{
+    options.ConfigureDocumentInfo(
+        "OrderFlow Identity API V1",
+        "v1",
+        "Authentication API using Minimal APIs with JWT Bearer authentication");
+    options.AddJwtBearerSecurity();
+});
+
+builder.Services.AddOpenApi("v2", options =>
+{
+    options.ConfigureDocumentInfo(
+        "OrderFlow Identity API V2",
+        "v2",
+        "Authentication API using Controllers with JWT Bearer authentication");
+    options.AddJwtBearerSecurity();
+});
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
@@ -80,32 +97,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 // ============================================
 // JWT BEARER AUTHENTICATION
 // ============================================
-var jwtSecret = builder.Configuration["Jwt:Secret"] 
-    ?? throw new InvalidOperationException("JWT Secret is not configured");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
-    ?? throw new InvalidOperationException("JWT Issuer is not configured");
-var jwtAudience = builder.Configuration["Jwt:Audience"]
-    ?? throw new InvalidOperationException("JWT Audience is not configured");
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-        ClockSkew = TimeSpan.Zero // Remove default 5 minute tolerance
-    };
-});
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -131,15 +123,24 @@ if (app.Environment.IsDevelopment())
     // Map OpenAPI documents - uses document names from AddOpenApi configuration
     app.MapOpenApi();
 
-    // Scalar Documentation with version switching
+    // path: scalar
     app.MapScalarApiReference(options =>
     {
         options
             .WithTitle("OrderFlow Identity API")
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
             .AddDocument("v1", "V1 - Minimal API", "/openapi/v1.json", isDefault: true)
             .AddDocument("v2", "V2 - Controllers", "/openapi/v2.json");
     });
+
+    //path: swagger
+
+    app.UseSwaggerUI(options =>
+    {
+        
+        options.SwaggerEndpoint("/openapi/v1.json", "OrderFlow Identity API V1");
+        options.SwaggerEndpoint("/openapi/v2.json", "OrderFlow Identity API V2");
+    });
+
 }
 
 app.UseHttpsRedirection();
