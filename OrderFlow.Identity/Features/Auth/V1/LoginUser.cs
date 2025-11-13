@@ -5,16 +5,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace OrderFlow.Identity.Features.Auth;
+namespace OrderFlow.Identity.Features.Auth.V1;
 
 public static class LoginUser
 {
-    public sealed record Request(
+    public sealed record LoginUserRequest(
         string Email,
         string Password
     );
 
-    public sealed record Response(
+    public sealed record LoginUserResponse(
         string AccessToken,
         string TokenType,
         int ExpiresIn,
@@ -23,11 +23,11 @@ public static class LoginUser
         IEnumerable<string> Roles
     );
 
-    public sealed record ErrorResponse(
+    public sealed record AuthErrorResponse(
         IEnumerable<string> Errors
     );
 
-    public class Validator : AbstractValidator<Request>
+    public class Validator : AbstractValidator<LoginUserRequest>
     {
         public Validator()
         {
@@ -42,18 +42,19 @@ public static class LoginUser
 
     public static IEndpointRouteBuilder MapLoginUser(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/api/auth/login", HandleAsync)
-            .WithName("LoginUser")
-            .WithTags("Authentication")
+        var authGroup = endpoints.MapAuthGroup();
+
+        authGroup.MapPost("/login", HandleAsync)
+            .WithName("LoginUserV1")
             .WithOpenApi(operation =>
             {
                 operation.Summary = "Login user";
                 operation.Description = "Authenticates a user and returns a JWT access token";
                 return operation;
             })
-            .Produces<Response>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<LoginUserResponse>(StatusCodes.Status200OK)
+            .Produces<AuthErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<AuthErrorResponse>(StatusCodes.Status400BadRequest)
             .DisableAntiforgery()
             .AllowAnonymous();
 
@@ -61,17 +62,17 @@ public static class LoginUser
     }
 
     private static async Task<IResult> HandleAsync(
-        Request? request,
+        LoginUserRequest? request,
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
-        IValidator<Request> validator,
+        IValidator<LoginUserRequest> validator,
         IConfiguration configuration,
-        ILogger<Request> logger,
+        ILogger<LoginUserRequest> logger,
         CancellationToken cancellationToken = default)
     {
         if (request is null)
         {
-            return Results.BadRequest(new ErrorResponse(["Request body is required"]));
+            return Results.BadRequest(new AuthErrorResponse(["Request body is required"]));
         }
 
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -79,14 +80,14 @@ public static class LoginUser
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage);
             logger.LogWarning("Login validation failed for email: {Email}", request.Email);
-            return Results.BadRequest(new ErrorResponse(errors));
+            return Results.BadRequest(new AuthErrorResponse(errors));
         }
 
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
             logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-            return Results.BadRequest(new ErrorResponse(["Invalid email or password"]));
+            return Results.BadRequest(new AuthErrorResponse(["Invalid email or password"]));
         }
 
         var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
@@ -94,13 +95,13 @@ public static class LoginUser
         if (result.IsLockedOut)
         {
             logger.LogWarning("User account locked out: {Email}", request.Email);
-            return Results.BadRequest(new ErrorResponse(["Account is locked due to multiple failed login attempts. Please try again later."]));
+            return Results.BadRequest(new AuthErrorResponse(["Account is locked due to multiple failed login attempts. Please try again later."]));
         }
 
         if (!result.Succeeded)
         {
             logger.LogWarning("Failed login attempt for email: {Email}", request.Email);
-            return Results.BadRequest(new ErrorResponse(["Invalid email or password"]));
+            return Results.BadRequest(new AuthErrorResponse(["Invalid email or password"]));
         }
 
         // Get user roles
@@ -112,7 +113,7 @@ public static class LoginUser
 
         logger.LogInformation("User successfully logged in: {UserId} - {Email}", user.Id, user.Email);
 
-        var response = new Response(
+        var response = new LoginUserResponse(
             AccessToken: token,
             TokenType: "Bearer",
             ExpiresIn: expiryMinutes * 60, // Convert to seconds

@@ -2,19 +2,38 @@ using Scalar.AspNetCore;
 using OrderFlow.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using OrderFlow.Identity.Features.Auth;
+using OrderFlow.Identity.Features.Auth.V1;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Asp.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Aspire Service Defaults (OpenTelemetry, Health Checks, Service Discovery, Resilience)
 builder.AddServiceDefaults();
 
-builder.Services.AddOpenApi();
+// Configure multiple OpenAPI documents for different versions
+builder.Services.AddOpenApi("v1");
+builder.Services.AddOpenApi("v2");
+
 builder.Services.AddAuthorization();
+builder.Services.AddControllers();
+
+// Add API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
@@ -65,7 +84,7 @@ var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("JWT Secret is not configured");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] 
     ?? throw new InvalidOperationException("JWT Issuer is not configured");
-var jwtAudience = builder.Configuration["Jwt:Audience"] 
+var jwtAudience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException("JWT Audience is not configured");
 
 builder.Services.AddAuthentication(options =>
@@ -109,12 +128,17 @@ if (app.Environment.IsDevelopment())
         }
     }
     
+    // Map OpenAPI documents - uses document names from AddOpenApi configuration
     app.MapOpenApi();
+
+    // Scalar Documentation with version switching
     app.MapScalarApiReference(options =>
     {
         options
             .WithTitle("OrderFlow Identity API")
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+            .AddDocument("v1", "V1 - Minimal API", "/openapi/v1.json", isDefault: true)
+            .AddDocument("v2", "V2 - Controllers", "/openapi/v2.json");
     });
 }
 
@@ -126,9 +150,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapDefaultEndpoints(); // Add health check endpoints
+
+// Map Controllers (V2)
+app.MapControllers();
+
+// Map Minimal API endpoints (V1)
 app.MapRegisterUser();
 app.MapLoginUser();
 app.MapGetCurrentUser();
 app.MapAdminOnly();
 
-app.Run();
+await app.RunAsync();
