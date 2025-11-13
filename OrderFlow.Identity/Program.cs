@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Asp.Versioning;
-using Microsoft.OpenApi.Models;
+//
 using OrderFlow.Identity.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
