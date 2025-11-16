@@ -7,13 +7,10 @@ import type {
   User,
 } from "@/types/auth";
 
-// Aspire injects VITE_IDENTITY_URL via WithEnvironment in AppHost
-const API_BASE_URL = import.meta.env.VITE_IDENTITY_URL;
+// Aspire injects API Gateway URL via WithEnvironment in AppHost
+const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
-// Using V1 Minimal API endpoints
-const API_VERSION = "v1";
-
-console.log('API_BASE_URL:', API_BASE_URL);
+console.log('API_BASE_URL (Gateway):', API_BASE_URL);
 
 class ApiError extends Error {
   errors: string[];
@@ -38,7 +35,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const authApi = {
   async register(data: RegisterRequest): Promise<RegisterResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/${API_VERSION}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +46,7 @@ export const authApi = {
   },
 
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/${API_VERSION}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -60,7 +57,7 @@ export const authApi = {
   },
 
   async getCurrentUser(token: string): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/${API_VERSION}/auth/me`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
