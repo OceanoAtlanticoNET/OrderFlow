@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,10 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 
-export function DashboardPage() {
+export function AdminDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -21,9 +21,9 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
@@ -31,69 +31,51 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welcome back!</CardTitle>
+            <CardTitle>Welcome, Admin!</CardTitle>
             <CardDescription>
-              You are successfully authenticated with the OrderFlow Identity API
+              You are logged in as an administrator
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Email
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Email</p>
               <p className="text-lg">{user?.email || "N/A"}</p>
             </div>
-
             <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                User ID
-              </p>
-              <p className="text-lg font-mono text-sm">
-                {user?.userId || "N/A"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Roles</p>
-              <div className="flex gap-2 flex-wrap">
-                {user?.roles?.map((role) => (
-                  <Badge key={role} variant="secondary">
-                    {role}
-                  </Badge>
-                )) || <span className="text-lg">N/A</span>}
-              </div>
+              <p className="text-sm font-medium text-muted-foreground">Role</p>
+              <p className="text-lg">{user?.roles?.join(", ") || "N/A"}</p>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link to="/profile">
+            <Link to="/admin/users">
               <CardHeader>
-                <CardTitle>My Profile</CardTitle>
+                <CardTitle>User Management</CardTitle>
                 <CardDescription>
-                  View and manage your profile
+                  Manage users, roles, and permissions
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  View your profile information and update your details
+                  Create, edit, delete users and manage their roles
                 </p>
               </CardContent>
             </Link>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link to="/profile/password">
+            <Link to="/admin/roles">
               <CardHeader>
-                <CardTitle>Security</CardTitle>
+                <CardTitle>Role Management</CardTitle>
                 <CardDescription>
-                  Manage your password
+                  Manage system roles
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Change your password to keep your account secure
+                  Create, edit, and delete roles
                 </p>
               </CardContent>
             </Link>

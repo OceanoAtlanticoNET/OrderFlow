@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { authApi, tokenStorage, ApiError } from "@/features/auth/api/authApi";
+import { authApi, tokenStorage } from "@/services/api/auth";
+import { ApiError } from "@/services/api/client";
 import type { LoginRequest, RegisterRequest, User } from "@/types/auth";
 
 interface AuthState {
@@ -22,7 +23,7 @@ export function useAuth() {
       const token = tokenStorage.getToken();
       if (token) {
         try {
-          const user = await authApi.getCurrentUser(token);
+          const user = await authApi.getCurrentUser();
           setAuthState({
             user,
             token,
@@ -49,7 +50,7 @@ export function useAuth() {
   const login = async (data: LoginRequest) => {
     const response = await authApi.login(data);
     tokenStorage.setToken(response.accessToken);
-    
+
     const user: User = {
       userId: response.userId,
       email: response.email,
@@ -80,11 +81,27 @@ export function useAuth() {
     });
   };
 
+  // Role checking utilities
+  const hasRole = (role: string): boolean => {
+    return authState.user?.roles?.includes(role) ?? false;
+  };
+
+  const hasAnyRole = (roles: string[]): boolean => {
+    return roles.some((role) => hasRole(role));
+  };
+
+  const isAdmin = (): boolean => {
+    return hasRole("Admin");
+  };
+
   return {
     ...authState,
     login,
     register,
     logout,
+    hasRole,
+    hasAnyRole,
+    isAdmin,
   };
 }
 

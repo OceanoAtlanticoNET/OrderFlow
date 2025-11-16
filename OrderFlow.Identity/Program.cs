@@ -112,24 +112,12 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 var app = builder.Build();
 
 // ============================================
-// AUTO-MIGRATE DATABASE ON STARTUP
+// SEED DEVELOPMENT DATA (Database, Roles, Admin User)
 // ============================================
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await context.Database.MigrateAsync();
-    
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    
-    foreach (var role in Roles.GetAll())
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-    
+    await app.Services.SeedDevelopmentDataAsync();
+
     // Map OpenAPI documents - uses document names from AddOpenApi configuration
     app.MapOpenApi();
 

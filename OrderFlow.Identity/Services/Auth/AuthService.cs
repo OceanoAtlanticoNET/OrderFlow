@@ -81,9 +81,7 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<AuthResult<RegisterUser.RegisterUserResponse>> RegisterAsync(
         string email,
-        string password,
-        string firstName,
-        string lastName)
+        string password)
     {
         // Check if user already exists
         var existingUser = await _userManager.FindByEmailAsync(email);
@@ -94,10 +92,11 @@ public class AuthService : IAuthService
                 "A user with this email already exists");
         }
 
-        // Create new user
+        // Create new user with email prefix as username (part before @)
+        var userName = email.Split('@')[0];
         var user = new IdentityUser
         {
-            UserName = email,
+            UserName = userName,
             Email = email,
             EmailConfirmed = false
         };

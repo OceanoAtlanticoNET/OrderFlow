@@ -19,16 +19,12 @@ public interface IAuthService
     /// <summary>
     /// Register a new user account
     /// </summary>
-    /// <param name="email">User email address</param>
+    /// <param name="email">User email address (also used as username)</param>
     /// <param name="password">User password</param>
-    /// <param name="firstName">User first name</param>
-    /// <param name="lastName">User last name</param>
     /// <returns>Registration result with user information</returns>
     Task<AuthResult<RegisterUser.RegisterUserResponse>> RegisterAsync(
         string email,
-        string password,
-        string firstName,
-        string lastName);
+        string password);
 
     /// <summary>
     /// Get current user information from user ID

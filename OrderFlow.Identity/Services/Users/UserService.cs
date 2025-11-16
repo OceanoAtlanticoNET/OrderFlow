@@ -48,13 +48,15 @@ public class UserService : IUserService
             query = query.Where(u => userIds.Contains(u.Id));
         }
 
-        // Apply sorting
-        query = parameters.SortBy.ToLower() switch
+        // Apply sorting (default to email ascending if no sort specified)
+        var sortBy = parameters.SortBy?.ToLower() ?? "email";
+        var sortDescending = parameters.SortDescending ?? false;
+        query = sortBy switch
         {
-            "username" => parameters.SortOrder.ToLower() == "desc"
+            "username" => sortDescending
                 ? query.OrderByDescending(u => u.UserName)
                 : query.OrderBy(u => u.UserName),
-            _ => parameters.SortOrder.ToLower() == "desc"
+            _ => sortDescending
                 ? query.OrderByDescending(u => u.Email)
                 : query.OrderBy(u => u.Email)
         };

@@ -26,12 +26,12 @@ public record UserQueryParameters
     public string? Role { get; init; }
 
     /// <summary>
-    /// Sort field (email, userName)
+    /// Sort field (email, userName). Optional - defaults to email if not specified.
     /// </summary>
-    public string SortBy { get; init; } = "email";
+    public string? SortBy { get; init; }
 
     /// <summary>
-    /// Sort order (asc, desc)
+    /// Sort in descending order. Optional - defaults to false (ascending) if not specified.
     /// </summary>
-    public string SortOrder { get; init; } = "asc";
+    public bool? SortDescending { get; init; }
 }

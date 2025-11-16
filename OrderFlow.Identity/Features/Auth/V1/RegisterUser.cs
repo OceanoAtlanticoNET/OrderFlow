@@ -7,9 +7,7 @@ public static class RegisterUser
 {
     public sealed record RegisterUserRequest(
         string Email,
-        string Password,
-        string FirstName,
-        string LastName
+        string Password
     );
 
     public sealed record RegisterUserResponse(
@@ -37,12 +35,6 @@ public static class RegisterUser
                 .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
                 .Matches(@"\d").WithMessage("Password must contain at least one digit")
                 .Matches(@"[^\da-zA-Z]").WithMessage("Password must contain at least one special character");
-
-            RuleFor(x => x.FirstName)
-                .NotEmpty().WithMessage("First name is required");
-
-            RuleFor(x => x.LastName)
-                .NotEmpty().WithMessage("Last name is required");
         }
     }
 
@@ -89,9 +81,7 @@ public static class RegisterUser
         // Call authentication service
         var result = await authService.RegisterAsync(
             request.Email,
-            request.Password,
-            request.FirstName,
-            request.LastName);
+            request.Password);
 
         if (!result.Succeeded)
         {

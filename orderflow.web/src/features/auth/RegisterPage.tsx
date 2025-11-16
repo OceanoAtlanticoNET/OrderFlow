@@ -22,8 +22,6 @@ export function RegisterPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    firstName: "",
-    lastName: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,36 +81,6 @@ export function RegisterPage() {
                 </ul>
               </div>
             )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
