@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Identity;
-using OrderFlow.Identity.Data;
 using FluentValidation;
+using OrderFlow.Identity.Services.Auth;
 
 namespace OrderFlow.Identity.Features.Auth.V1;
 
@@ -53,11 +52,11 @@ public static class RegisterUser
 
         authGroup.MapPost("/register", HandleAsync)
             .WithName("RegisterUserV1")
-            .WithOpenApi(operation =>
+            .AddOpenApiOperationTransformer((operation, context, ct) =>
             {
                 operation.Summary = "Register a new user";
                 operation.Description = "Creates a new user account with the provided credentials";
-                return operation;
+                return Task.CompletedTask;
             })
             .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
             .Produces<AuthErrorResponse>(StatusCodes.Status400BadRequest)
@@ -69,7 +68,7 @@ public static class RegisterUser
 
     private static async Task<IResult> HandleAsync(
         RegisterUserRequest? request,
-        UserManager<IdentityUser> userManager,
+        IAuthService authService,
         IValidator<RegisterUserRequest> validator,
         ILogger<RegisterUserRequest> logger,
         CancellationToken cancellationToken = default)
@@ -87,47 +86,22 @@ public static class RegisterUser
             return Results.BadRequest(new AuthErrorResponse(errors));
         }
 
-        var existingUser = await userManager.FindByEmailAsync(request.Email);
-        if (existingUser is not null)
+        // Call authentication service
+        var result = await authService.RegisterAsync(
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName);
+
+        if (!result.Succeeded)
         {
-            logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            return Results.BadRequest(new AuthErrorResponse(["A user with this email already exists"]));
-        }
-
-        var user = new IdentityUser
-        {
-            UserName = request.Email,
-            Email = request.Email,
-            EmailConfirmed = false
-        };
-
-        var createResult = await userManager.CreateAsync(user, request.Password);
-
-        if (!createResult.Succeeded)
-        {
-            var errors = createResult.Errors.Select(e => e.Description);
-            logger.LogError("Failed to create user {Email}: {Errors}",
-                request.Email, string.Join(", ", errors));
-
-            return Results.BadRequest(new AuthErrorResponse(errors));
-        }
-
-        var roleResult = await userManager.AddToRoleAsync(user, Roles.Customer);
-        if (!roleResult.Succeeded)
-        {
-            logger.LogWarning("Failed to assign Customer role to user {UserId}: {Errors}",
-                user.Id, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            logger.LogWarning("Registration failed for email: {Email}", request.Email);
+            return Results.BadRequest(new AuthErrorResponse(result.Errors));
         }
 
         logger.LogInformation("User successfully registered: {UserId} - {Email}",
-            user.Id, user.Email);
+            result.Data!.UserId, result.Data.Email);
 
-        var response = new RegisterUserResponse(
-            UserId: user.Id,
-            Email: user.Email,
-            Message: "User registered successfully. Please check your email to confirm your account."
-        );
-
-        return Results.Created($"/api/auth/users/{user.Id}", response);
+        return Results.Created($"/api/auth/users/{result.Data.UserId}", result.Data);
     }
 }

@@ -3,6 +3,8 @@ using OrderFlow.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OrderFlow.Identity.Features.Auth.V1;
+using OrderFlow.Identity.Features.Users.V1;
+using OrderFlow.Identity.Features.Roles.V1;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -95,6 +97,14 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // ============================================
+// SERVICE LAYER
+// ============================================
+builder.Services.AddScoped<OrderFlow.Identity.Services.Auth.ITokenService, OrderFlow.Identity.Services.Auth.TokenService>();
+builder.Services.AddScoped<OrderFlow.Identity.Services.Auth.IAuthService, OrderFlow.Identity.Services.Auth.AuthService>();
+builder.Services.AddScoped<OrderFlow.Identity.Services.Users.IUserService, OrderFlow.Identity.Services.Users.UserService>();
+builder.Services.AddScoped<OrderFlow.Identity.Services.Roles.IRoleService, OrderFlow.Identity.Services.Roles.RoleService>();
+
+// ============================================
 // JWT BEARER AUTHENTICATION
 // ============================================
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -156,9 +166,16 @@ app.MapDefaultEndpoints(); // Add health check endpoints
 app.MapControllers();
 
 // Map Minimal API endpoints (V1)
+// Auth endpoints
 app.MapRegisterUser();
 app.MapLoginUser();
 app.MapGetCurrentUser();
 app.MapAdminOnly();
+
+// User management endpoints
+app.MapUserEndpoints();
+
+// Role management endpoints
+app.MapRoleEndpoints();
 
 await app.RunAsync();

@@ -24,7 +24,6 @@ public static class AuthGroup
         return endpoints
             .MapGroup("/api/v{version:apiVersion}/auth")
             .WithApiVersionSet(versionSet)
-            .WithTags("Authentication V1")
-            .WithOpenApi();
+            .WithTags("Authentication V1");
     }
 }

@@ -43,8 +43,8 @@ var apiGateway = builder.AddProject<Projects.OrderFlow_ApiGateway>("orderflow-ap
 var frontendApp = builder.AddNpmApp("orderflow-web", "../orderflow.web", "dev")
     .WithReference(apiGateway) // Frontend talks to Gateway, not to services directly
     .WithEnvironment("VITE_API_GATEWAY_URL", apiGateway.GetEndpoint("https")) // Gateway URL for frontend
-    .WithHttpEndpoint(env: "PORT") // Let Aspire assign port dynamically
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint(env: "VITE_PORT") // Vite uses VITE_PORT environment variable
+    .WithExternalHttpEndpoints() // Make endpoint accessible via Aspire dashboard
     .PublishAsDockerFile();
 
 builder.Build().Run();

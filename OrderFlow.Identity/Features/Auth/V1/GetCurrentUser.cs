@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using OrderFlow.Identity.Services.Auth;
 
 namespace OrderFlow.Identity.Features.Auth.V1;
 
@@ -17,11 +18,11 @@ public static class GetCurrentUser
         authGroup.MapGet("/me", HandleAsync)
             .RequireAuthorization()
             .WithName("GetCurrentUserV1")
-            .WithOpenApi(operation =>
+            .AddOpenApiOperationTransformer((operation, context, ct) =>
             {
                 operation.Summary = "Get current authenticated user";
                 operation.Description = "Returns the current user's information from JWT token claims. Requires authentication.";
-                return operation;
+                return Task.CompletedTask;
             })
             .Produces<CurrentUserResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -29,23 +30,25 @@ public static class GetCurrentUser
         return endpoints;
     }
 
-    private static IResult HandleAsync(ClaimsPrincipal user)
+    private static async Task<IResult> HandleAsync(
+        ClaimsPrincipal user,
+        IAuthService authService)
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = user.FindFirstValue(ClaimTypes.Email);
-        var roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value);
 
-        if (userId is null || email is null)
+        if (userId is null)
         {
             return Results.Unauthorized();
         }
 
-        var response = new CurrentUserResponse(
-            UserId: userId,
-            Email: email,
-            Roles: roles
-        );
+        // Call authentication service
+        var result = await authService.GetCurrentUserAsync(userId);
 
-        return Results.Ok(response);
+        if (!result.Succeeded)
+        {
+            return Results.Unauthorized();
+        }
+
+        return Results.Ok(result.Data);
     }
 }

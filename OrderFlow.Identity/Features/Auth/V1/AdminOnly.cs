@@ -14,13 +14,13 @@ public static class AdminOnly
         var authGroup = endpoints.MapAuthGroup();
 
         authGroup.MapGet("/admin-only", HandleAsync)
-            .RequireAuthorization(policy => policy.RequireRole(Roles.Admin))
+            .RequireAuthorization(policy => policy.RequireRole(Data.Roles.Admin))
             .WithName("AdminOnlyV1")
-            .WithOpenApi(operation =>
+            .AddOpenApiOperationTransformer((operation, context, ct) =>
             {
                 operation.Summary = "Admin only endpoint";
                 operation.Description = "Test endpoint that requires Admin role. Returns 403 if user is not an admin.";
-                return operation;
+                return Task.CompletedTask;
             })
             .Produces<AdminOnlyResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
