@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Roles;
 
 namespace OrderFlow.Identity.Features.Roles.V1;
@@ -16,8 +16,8 @@ public static class DeleteRole
                 return Task.CompletedTask;
             })
             .Produces(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -41,28 +41,25 @@ public static class DeleteRole
             // Check if it's a not found error
             if (result.Errors.Any(e => e.Contains("not found") || e.Contains("does not exist")))
             {
-                return Results.NotFound(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "Role not found"
-                });
+                return Results.Problem(
+                    title: "Role not found",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
             // Check if it's a constraint error (role has users)
             if (result.Errors.Any(e => e.Contains("users assigned") || e.Contains("cannot be deleted")))
             {
-                return Results.BadRequest(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "Cannot delete role with assigned users"
-                });
+                return Results.Problem(
+                    title: "Cannot delete role with assigned users",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status400BadRequest);
             }
 
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to delete role"
-            });
+            return Results.Problem(
+                title: "Failed to delete role",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("Role deleted successfully: {RoleId}", roleId);

@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Roles;
 
 namespace OrderFlow.Identity.Features.Roles.V1;
@@ -15,8 +15,8 @@ public static class GetRoleById
                 operation.Description = "Returns detailed information about a specific role. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<Models.Roles.Responses.RoleDetailResponse>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<Dtos.Roles.Responses.RoleDetailResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -36,11 +36,10 @@ public static class GetRoleById
         {
             logger.LogWarning("Failed to fetch role {RoleId}: {Errors}",
                 roleId, string.Join(", ", result.Errors));
-            return Results.NotFound(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Role not found"
-            });
+            return Results.Problem(
+                title: "Role not found",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status404NotFound);
         }
 
         return Results.Ok(result.Data);

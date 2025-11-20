@@ -1,4 +1,3 @@
-using OrderFlow.Identity.Models.Common;
 using OrderFlow.Identity.Services.Users;
 using System.Security.Claims;
 
@@ -16,7 +15,7 @@ public static class GetMyProfile
                 operation.Description = "Returns the current user's profile information. Requires authentication.";
                 return Task.CompletedTask;
             })
-            .Produces<Models.Users.Responses.UserDetailResponse>(StatusCodes.Status200OK)
+            .Produces<Dtos.Users.Responses.UserDetailResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
 
         return group;

@@ -1,5 +1,5 @@
-using OrderFlow.Identity.Models.Common;
-using OrderFlow.Identity.Models.Users.Queries;
+using OrderFlow.Identity.Dtos.Common;
+using OrderFlow.Identity.Dtos.Users.Queries;
 using OrderFlow.Identity.Services.Users;
 
 namespace OrderFlow.Identity.Features.Users.V1;
@@ -16,7 +16,7 @@ public static class GetUsers
                 operation.Description = "Returns a paginated list of users with optional filtering and sorting. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<PaginatedResponse<Models.Users.Responses.UserResponse>>(StatusCodes.Status200OK)
+            .Produces<PaginatedResponse<Dtos.Users.Responses.UserResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -33,7 +33,7 @@ public static class GetUsers
 
         var result = await userService.GetUsersAsync(query);
 
-        var response = new PaginatedResponse<Models.Users.Responses.UserResponse>
+        var response = new PaginatedResponse<Dtos.Users.Responses.UserResponse>
         {
             Data = result.Data,
             Pagination = result.Pagination

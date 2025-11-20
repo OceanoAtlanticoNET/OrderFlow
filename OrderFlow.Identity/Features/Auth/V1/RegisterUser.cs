@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Auth;
 
 namespace OrderFlow.Identity.Features.Auth.V1;
@@ -14,10 +15,6 @@ public static class RegisterUser
         string UserId,
         string Email,
         string Message
-    );
-
-    public sealed record AuthErrorResponse(
-        IEnumerable<string> Errors
     );
 
     public class Validator : AbstractValidator<RegisterUserRequest>
@@ -51,7 +48,8 @@ public static class RegisterUser
                 return Task.CompletedTask;
             })
             .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
-            .Produces<AuthErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .DisableAntiforgery()
             .AllowAnonymous();
 
@@ -59,23 +57,19 @@ public static class RegisterUser
     }
 
     private static async Task<IResult> HandleAsync(
-        RegisterUserRequest? request,
+        RegisterUserRequest request,
         IAuthService authService,
         IValidator<RegisterUserRequest> validator,
         ILogger<RegisterUserRequest> logger,
         CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            return Results.BadRequest(new AuthErrorResponse(["Request body is required"]));
-        }
 
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             logger.LogWarning("Registration validation failed for email: {Email}", request.Email);
-            return Results.BadRequest(new AuthErrorResponse(errors));
+            return Results.ValidationProblem(errors, title: "Validation failed");
         }
 
         // Call authentication service
@@ -86,7 +80,10 @@ public static class RegisterUser
         if (!result.Succeeded)
         {
             logger.LogWarning("Registration failed for email: {Email}", request.Email);
-            return Results.BadRequest(new AuthErrorResponse(result.Errors));
+            return Results.Problem(
+                title: "Registration failed",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("User successfully registered: {UserId} - {Email}",

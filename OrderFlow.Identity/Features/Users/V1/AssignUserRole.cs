@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Users;
 
 namespace OrderFlow.Identity.Features.Users.V1;
@@ -16,8 +16,8 @@ public static class AssignUserRole
                 return Task.CompletedTask;
             })
             .Produces(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
             .DisableAntiforgery();
@@ -42,18 +42,16 @@ public static class AssignUserRole
 
             if (result.Errors.Any(e => e.Contains("not found")))
             {
-                return Results.NotFound(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "User or role not found"
-                });
+                return Results.Problem(
+                    title: "User or role not found",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to assign role"
-            });
+            return Results.Problem(
+                title: "Failed to assign role",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("Role {Role} assigned to user {UserId} successfully", roleName, userId);

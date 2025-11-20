@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Users;
 
 namespace OrderFlow.Identity.Features.Users.V1;
@@ -16,7 +16,7 @@ public static class DeleteUser
                 return Task.CompletedTask;
             })
             .Produces(StatusCodes.Status204NoContent)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -39,18 +39,16 @@ public static class DeleteUser
 
             if (result.Errors.Any(e => e.Contains("not found")))
             {
-                return Results.NotFound(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "User not found"
-                });
+                return Results.Problem(
+                    title: "User not found",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to delete user"
-            });
+            return Results.Problem(
+                title: "Failed to delete user",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("User deleted successfully: {UserId}", userId);

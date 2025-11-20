@@ -1,5 +1,5 @@
 using FluentValidation;
-using OrderFlow.Identity.Models.Roles.Requests;
+using OrderFlow.Identity.Dtos.Roles.Requests;
 
 namespace OrderFlow.Identity.Validators.Roles;
 

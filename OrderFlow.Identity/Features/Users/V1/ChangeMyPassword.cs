@@ -1,6 +1,6 @@
 using FluentValidation;
-using OrderFlow.Identity.Models.Common;
-using OrderFlow.Identity.Models.Users.Requests;
+using Microsoft.AspNetCore.Mvc;
+using OrderFlow.Identity.Dtos.Users.Requests;
 using OrderFlow.Identity.Services.Users;
 using System.Security.Claims;
 
@@ -18,9 +18,11 @@ public static class ChangeMyPassword
                 operation.Description = "Changes the current user's password. Requires authentication and current password.";
                 return Task.CompletedTask;
             })
+            .Accepts<ChangePasswordRequest>("application/json")
             .Produces(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .DisableAntiforgery();
 
         return group;
@@ -28,7 +30,7 @@ public static class ChangeMyPassword
 
     private static async Task<IResult> HandleAsync(
         ClaimsPrincipal user,
-        ChangePasswordRequest? request,
+        ChangePasswordRequest request,
         IUserService userService,
         IValidator<ChangePasswordRequest> validator,
         ILogger<ChangePasswordRequest> logger,
@@ -41,24 +43,12 @@ public static class ChangeMyPassword
             return Results.Unauthorized();
         }
 
-        if (request is null)
-        {
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = ["Request body is required"]
-            });
-        }
-
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             logger.LogWarning("Password change validation failed for: {UserId}", userId);
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = errors,
-                Message = "Validation failed"
-            });
+            return Results.ValidationProblem(errors, title: "Validation failed");
         }
 
         logger.LogInformation("Changing password for user: {UserId}", userId);
@@ -76,18 +66,16 @@ public static class ChangeMyPassword
             // Check if it's a wrong current password error
             if (result.Errors.Any(e => e.Contains("Incorrect password") || e.Contains("current password")))
             {
-                return Results.Json(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "Current password is incorrect"
-                }, statusCode: StatusCodes.Status401Unauthorized);
+                return Results.Problem(
+                    title: "Current password is incorrect",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status401Unauthorized);
             }
 
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to change password"
-            });
+            return Results.Problem(
+                title: "Failed to change password",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("Password changed successfully for user: {UserId}", userId);

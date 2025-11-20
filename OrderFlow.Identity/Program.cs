@@ -26,6 +26,7 @@ builder.Services.AddOpenApi("v1", options =>
         "v1",
         "Authentication API using Minimal APIs with JWT Bearer authentication");
     options.AddJwtBearerSecurity();
+    options.FilterByApiVersion("v1");
 });
 
 builder.Services.AddOpenApi("v2", options =>
@@ -35,6 +36,7 @@ builder.Services.AddOpenApi("v2", options =>
         "v2",
         "Authentication API using Controllers with JWT Bearer authentication");
     options.AddJwtBearerSecurity();
+    options.FilterByApiVersion("v2");
 });
 
 builder.Services.AddAuthorization();

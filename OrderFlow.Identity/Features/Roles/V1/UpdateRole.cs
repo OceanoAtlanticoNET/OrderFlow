@@ -1,6 +1,6 @@
 using FluentValidation;
-using OrderFlow.Identity.Models.Common;
-using OrderFlow.Identity.Models.Roles.Requests;
+using Microsoft.AspNetCore.Mvc;
+using OrderFlow.Identity.Dtos.Roles.Requests;
 using OrderFlow.Identity.Services.Roles;
 
 namespace OrderFlow.Identity.Features.Roles.V1;
@@ -17,9 +17,10 @@ public static class UpdateRole
                 operation.Description = "Updates an existing role's name. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<Models.Roles.Responses.RoleResponse>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Accepts<UpdateRoleRequest>("application/json")
+            .Produces<Dtos.Roles.Responses.RoleResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
             .DisableAntiforgery();
@@ -29,30 +30,19 @@ public static class UpdateRole
 
     private static async Task<IResult> HandleAsync(
         string roleId,
-        UpdateRoleRequest? request,
+        UpdateRoleRequest request,
         IRoleService roleService,
         IValidator<UpdateRoleRequest> validator,
         ILogger<UpdateRoleRequest> logger,
         CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = ["Request body is required"]
-            });
-        }
 
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             logger.LogWarning("Role update validation failed for: {RoleId}", roleId);
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = errors,
-                Message = "Validation failed"
-            });
+            return Results.ValidationProblem(errors, title: "Validation failed");
         }
 
         logger.LogInformation("Updating role {RoleId} to name: {NewName}", roleId, request.RoleName);
@@ -67,18 +57,16 @@ public static class UpdateRole
             // Check if it's a not found error
             if (result.Errors.Any(e => e.Contains("not found") || e.Contains("does not exist")))
             {
-                return Results.NotFound(new ErrorResponse
-                {
-                    Errors = result.Errors,
-                    Message = "Role not found"
-                });
+                return Results.Problem(
+                    title: "Role not found",
+                    detail: string.Join(", ", result.Errors),
+                    statusCode: StatusCodes.Status404NotFound);
             }
 
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to update role"
-            });
+            return Results.Problem(
+                title: "Failed to update role",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("Role updated successfully: {RoleId}", roleId);

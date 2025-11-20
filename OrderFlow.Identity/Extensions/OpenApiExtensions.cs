@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -32,6 +33,34 @@ public static class OpenApiExtensions
         string description)
     {
         options.AddDocumentTransformer(new DocumentInfoTransformer(title, version, description));
+    }
+
+    /// <summary>
+    /// Filters OpenAPI document to include only endpoints matching the specified API version
+    /// </summary>
+    public static void FilterByApiVersion(this OpenApiOptions options, string apiVersion)
+    {
+        options.AddOperationTransformer((operation, context, cancellationToken) =>
+        {
+            // Get the API version from endpoint metadata
+            var apiVersionMetadata = context.Description.ActionDescriptor.EndpointMetadata
+                .OfType<ApiVersionAttribute>()
+                .FirstOrDefault();
+
+            // If endpoint has no version metadata, exclude it from versioned documents
+            if (apiVersionMetadata == null)
+            {
+                return Task.FromResult<OpenApiOperation?>(null);
+            }
+
+            // Check if any of the endpoint's versions match the document version
+            var endpointVersions = apiVersionMetadata.Versions;
+            var documentVersion = apiVersion.TrimStart('v');
+
+            var matches = endpointVersions.Any(v => v.ToString() == documentVersion);
+
+            return Task.FromResult(matches ? operation : null);
+        });
     }
 }
 

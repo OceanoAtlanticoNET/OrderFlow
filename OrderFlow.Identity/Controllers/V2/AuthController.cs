@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using OrderFlow.Identity.Dtos.Auth;
 
 namespace OrderFlow.Identity.Controllers.V2;
 
@@ -43,8 +44,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login(
         [FromBody] LoginRequest request,
         [FromServices] IValidator<LoginRequest> validator,
@@ -53,16 +54,22 @@ public class AuthController : ControllerBase
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             _logger.LogWarning("Login validation failed for email: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(errors));
+            return ValidationProblem(new ValidationProblemDetails(errors)
+            {
+                Title = "Validation failed"
+            });
         }
 
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
             _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(["Invalid email or password"]));
+            return Problem(
+                title: "Invalid credentials",
+                detail: "Invalid email or password",
+                statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
@@ -70,13 +77,19 @@ public class AuthController : ControllerBase
         if (result.IsLockedOut)
         {
             _logger.LogWarning("User account locked out: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(["Account is locked due to multiple failed login attempts. Please try again later."]));
+            return Problem(
+                title: "Account locked",
+                detail: "Account is locked due to multiple failed login attempts. Please try again later.",
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         if (!result.Succeeded)
         {
             _logger.LogWarning("Failed login attempt for email: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(["Invalid email or password"]));
+            return Problem(
+                title: "Invalid credentials",
+                detail: "Invalid email or password",
+                statusCode: StatusCodes.Status401Unauthorized);
         }
 
         // Get user roles
@@ -111,7 +124,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType<RegisterResponse>(StatusCodes.Status201Created)]
-    [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RegisterResponse>> Register(
         [FromBody] RegisterRequest request,
         [FromServices] IValidator<RegisterRequest> validator,
@@ -120,9 +133,12 @@ public class AuthController : ControllerBase
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             _logger.LogWarning("Registration validation failed for email: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(errors));
+            return ValidationProblem(new ValidationProblemDetails(errors)
+            {
+                Title = "Validation failed"
+            });
         }
 
         // Check if user already exists
@@ -130,7 +146,10 @@ public class AuthController : ControllerBase
         if (existingUser != null)
         {
             _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
-            return BadRequest(new ErrorResponse(["User with this email already exists"]));
+            return Problem(
+                title: "User already exists",
+                detail: "User with this email already exists",
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         var user = new IdentityUser
@@ -147,7 +166,10 @@ public class AuthController : ControllerBase
             var errors = result.Errors.Select(e => e.Description);
             _logger.LogWarning("User creation failed for email: {Email}. Errors: {@Errors}",
                 request.Email, errors);
-            return BadRequest(new ErrorResponse(errors));
+            return Problem(
+                title: "Failed to create user",
+                detail: string.Join(", ", errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         // Add default role
@@ -250,58 +272,4 @@ public class AuthController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
-
-// DTOs for Controllers pattern
-public class LoginRequest
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-}
-
-public class LoginResponse
-{
-    public string AccessToken { get; set; } = string.Empty;
-    public string TokenType { get; set; } = string.Empty;
-    public int ExpiresIn { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public IEnumerable<string> Roles { get; set; } = [];
-}
-
-public class RegisterRequest
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string ConfirmPassword { get; set; } = string.Empty;
-}
-
-public class RegisterResponse
-{
-    public string UserId { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-}
-
-public class CurrentUserResponse
-{
-    public string UserId { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public IEnumerable<string> Roles { get; set; } = [];
-}
-
-public class ErrorResponse
-{
-    public IEnumerable<string> Errors { get; set; }
-
-    public ErrorResponse(IEnumerable<string> errors)
-    {
-        Errors = errors;
-    }
-}
-
-public class AdminOnlyResponse
-{
-    public string Message { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
 }

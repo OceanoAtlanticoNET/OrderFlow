@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Auth;
 
 namespace OrderFlow.Identity.Features.Auth.V1;
@@ -17,10 +18,6 @@ public static class LoginUser
         string UserId,
         string Email,
         IEnumerable<string> Roles
-    );
-
-    public sealed record AuthErrorResponse(
-        IEnumerable<string> Errors
     );
 
     public class Validator : AbstractValidator<LoginUserRequest>
@@ -49,8 +46,8 @@ public static class LoginUser
                 return Task.CompletedTask;
             })
             .Produces<LoginUserResponse>(StatusCodes.Status200OK)
-            .Produces<AuthErrorResponse>(StatusCodes.Status401Unauthorized)
-            .Produces<AuthErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
             .DisableAntiforgery()
             .AllowAnonymous();
 
@@ -58,23 +55,19 @@ public static class LoginUser
     }
 
     private static async Task<IResult> HandleAsync(
-        LoginUserRequest? request,
+        LoginUserRequest request,
         IAuthService authService,
         IValidator<LoginUserRequest> validator,
         ILogger<LoginUserRequest> logger,
         CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            return Results.BadRequest(new AuthErrorResponse(["Request body is required"]));
-        }
 
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             logger.LogWarning("Login validation failed for email: {Email}", request.Email);
-            return Results.BadRequest(new AuthErrorResponse(errors));
+            return Results.ValidationProblem(errors, title: "Validation failed");
         }
 
         // Call authentication service
@@ -83,7 +76,10 @@ public static class LoginUser
         if (!result.Succeeded)
         {
             logger.LogWarning("Login failed for email: {Email}", request.Email);
-            return Results.BadRequest(new AuthErrorResponse(result.Errors));
+            return Results.Problem(
+                title: "Login failed",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status401Unauthorized);
         }
 
         logger.LogInformation("User successfully logged in: {UserId} - {Email}",

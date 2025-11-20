@@ -1,6 +1,6 @@
 using FluentValidation;
-using OrderFlow.Identity.Models.Common;
-using OrderFlow.Identity.Models.Users.Requests;
+using Microsoft.AspNetCore.Mvc;
+using OrderFlow.Identity.Dtos.Users.Requests;
 using OrderFlow.Identity.Services.Users;
 
 namespace OrderFlow.Identity.Features.Users.V1;
@@ -17,8 +17,9 @@ public static class CreateUser
                 operation.Description = "Creates a new user account with specified roles. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<Models.Users.Responses.UserResponse>(StatusCodes.Status201Created)
-            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+            .Accepts<CreateUserRequest>("application/json")
+            .Produces<Dtos.Users.Responses.UserResponse>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
             .DisableAntiforgery();
@@ -27,30 +28,19 @@ public static class CreateUser
     }
 
     private static async Task<IResult> HandleAsync(
-        CreateUserRequest? request,
+        CreateUserRequest request,
         IUserService userService,
         IValidator<CreateUserRequest> validator,
         ILogger<CreateUserRequest> logger,
         CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = ["Request body is required"]
-            });
-        }
 
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            var errors = validationResult.ToDictionary();
             logger.LogWarning("User creation validation failed");
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = errors,
-                Message = "Validation failed"
-            });
+            return Results.ValidationProblem(errors, title: "Validation failed");
         }
 
         var result = await userService.CreateUserAsync(request);
@@ -58,11 +48,10 @@ public static class CreateUser
         if (!result.Succeeded)
         {
             logger.LogWarning("User creation failed: {Errors}", string.Join(", ", result.Errors));
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to create user"
-            });
+            return Results.Problem(
+                title: "Failed to create user",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         logger.LogInformation("User created successfully: {UserId}", result.Data!.UserId);

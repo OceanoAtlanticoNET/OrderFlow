@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using OrderFlow.Identity.Models.Common;
+using OrderFlow.Identity.Dtos.Common;
 using OrderFlow.Identity.Services.Roles;
 
 namespace OrderFlow.Identity.Features.Roles.V1;
@@ -16,8 +16,8 @@ public static class GetRoleUsers
                 operation.Description = "Returns a paginated list of users assigned to a specific role. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<PaginatedResponse<Models.Users.Responses.UserResponse>>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PaginatedResponse<Dtos.Users.Responses.UserResponse>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -41,7 +41,7 @@ public static class GetRoleUsers
             logger.LogWarning("Role not found: {RoleId}", roleId);
         }
 
-        return Results.Ok(new PaginatedResponse<Models.Users.Responses.UserResponse>
+        return Results.Ok(new PaginatedResponse<Dtos.Users.Responses.UserResponse>
         {
             Data = result.Data,
             Pagination = result.Pagination

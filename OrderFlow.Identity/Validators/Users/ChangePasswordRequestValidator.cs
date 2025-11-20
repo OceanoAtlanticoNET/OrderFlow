@@ -1,5 +1,5 @@
 using FluentValidation;
-using OrderFlow.Identity.Models.Users.Requests;
+using OrderFlow.Identity.Dtos.Users.Requests;
 
 namespace OrderFlow.Identity.Validators.Users;
 

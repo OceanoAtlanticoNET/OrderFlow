@@ -1,6 +1,14 @@
-@OrderFlow.Identity_HostAddress = http://localhost:5137
+@OrderFlow.Identity_HostAddress = https://localhost:7264
 
 GET {{OrderFlow.Identity_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+GET {{OrderFlow.Identity_HostAddress}}/api/v1/auth/me
+
+###
+
+POST {{OrderFlow.Identity_HostAddress}}/api/v1/auth/register
 
 ###

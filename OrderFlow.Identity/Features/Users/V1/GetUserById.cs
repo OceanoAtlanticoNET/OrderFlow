@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Users;
 
 namespace OrderFlow.Identity.Features.Users.V1;
@@ -15,8 +15,8 @@ public static class GetUserById
                 operation.Description = "Returns detailed information about a specific user. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<Models.Users.Responses.UserDetailResponse>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<Dtos.Users.Responses.UserDetailResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -34,11 +34,10 @@ public static class GetUserById
 
         if (!result.Succeeded)
         {
-            return Results.NotFound(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "User not found"
-            });
+            return Results.Problem(
+                title: "User not found",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status404NotFound);
         }
 
         return Results.Ok(result.Data);

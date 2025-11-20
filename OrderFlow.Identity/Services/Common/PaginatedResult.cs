@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using OrderFlow.Identity.Dtos.Common;
 
 namespace OrderFlow.Identity.Services.Common;
 

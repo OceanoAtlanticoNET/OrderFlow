@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using OrderFlow.Identity.Models.Common;
-using OrderFlow.Identity.Models.Roles.Responses;
-using OrderFlow.Identity.Models.Users.Responses;
+using OrderFlow.Identity.Dtos.Common;
+using OrderFlow.Identity.Dtos.Roles.Responses;
+using OrderFlow.Identity.Dtos.Users.Responses;
 using OrderFlow.Identity.Services.Common;
 
 namespace OrderFlow.Identity.Services.Roles;

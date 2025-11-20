@@ -1,4 +1,4 @@
-using OrderFlow.Identity.Models.Common;
+using Microsoft.AspNetCore.Mvc;
 using OrderFlow.Identity.Services.Roles;
 
 namespace OrderFlow.Identity.Features.Roles.V1;
@@ -15,7 +15,7 @@ public static class GetRoles
                 operation.Description = "Returns a list of all roles in the system. Requires Admin role.";
                 return Task.CompletedTask;
             })
-            .Produces<IEnumerable<Models.Roles.Responses.RoleResponse>>(StatusCodes.Status200OK)
+            .Produces<IEnumerable<Dtos.Roles.Responses.RoleResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
@@ -34,11 +34,10 @@ public static class GetRoles
         {
             logger.LogWarning("Failed to fetch roles: {Errors}",
                 string.Join(", ", result.Errors));
-            return Results.BadRequest(new ErrorResponse
-            {
-                Errors = result.Errors,
-                Message = "Failed to fetch roles"
-            });
+            return Results.Problem(
+                title: "Failed to fetch roles",
+                detail: string.Join(", ", result.Errors),
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         return Results.Ok(result.Data);
