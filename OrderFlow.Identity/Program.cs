@@ -12,6 +12,9 @@ using System.Text;
 using Asp.Versioning;
 //
 using OrderFlow.Identity.Extensions;
+using OrderFlow.Identity.Services.Auth;
+using OrderFlow.Identity.Services.Users;
+using OrderFlow.Identity.Services.Roles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,10 +104,10 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 // ============================================
 // SERVICE LAYER
 // ============================================
-builder.Services.AddScoped<OrderFlow.Identity.Services.Auth.ITokenService, OrderFlow.Identity.Services.Auth.TokenService>();
-builder.Services.AddScoped<OrderFlow.Identity.Services.Auth.IAuthService, OrderFlow.Identity.Services.Auth.AuthService>();
-builder.Services.AddScoped<OrderFlow.Identity.Services.Users.IUserService, OrderFlow.Identity.Services.Users.UserService>();
-builder.Services.AddScoped<OrderFlow.Identity.Services.Roles.IRoleService, OrderFlow.Identity.Services.Roles.RoleService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // ============================================
 // JWT BEARER AUTHENTICATION
