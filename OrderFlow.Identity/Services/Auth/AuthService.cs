@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using OrderFlow.Identity.Features.Auth.V1;
 using OrderFlow.Identity.Services.Common;
+using OrderFlow.Identity.Services.Events;
+using OrderFlow.Shared.Events;
+using OrderFlow.Shared.Redis;
 
 namespace OrderFlow.Identity.Services.Auth;
 
@@ -12,17 +15,20 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly ITokenService _tokenService;
+    private readonly IEventPublisher _eventPublisher;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         ITokenService tokenService,
+        IEventPublisher eventPublisher,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _eventPublisher = eventPublisher;
         _logger = logger;
     }
 
@@ -122,6 +128,15 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("User successfully registered: {UserId} - {Email}",
             user.Id, user.Email);
+
+        // Publish user registered event for notifications
+        var userRegisteredEvent = new UserRegisteredEvent(
+            UserId: user.Id,
+            Email: user.Email!,
+            FirstName: null,
+            LastName: null);
+
+        await _eventPublisher.PublishAsync(RedisChannels.UserRegistered, userRegisteredEvent);
 
         var response = new RegisterUser.RegisterUserResponse(
             UserId: user.Id,

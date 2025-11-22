@@ -13,6 +13,7 @@ using Asp.Versioning;
 //
 using OrderFlow.Identity.Extensions;
 using OrderFlow.Identity.Services.Auth;
+using OrderFlow.Identity.Services.Events;
 using OrderFlow.Identity.Services.Users;
 using OrderFlow.Identity.Services.Roles;
 
@@ -77,6 +78,9 @@ builder.Services.AddCors(options =>
 // Add PostgreSQL DbContext with Aspire
 builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb");
 
+// Add Redis for event publishing
+builder.AddRedisClient("cache");
+
 // Add ASP.NET Core Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
@@ -108,6 +112,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IEventPublisher, RedisEventPublisher>();
 
 // ============================================
 // JWT BEARER AUTHENTICATION
