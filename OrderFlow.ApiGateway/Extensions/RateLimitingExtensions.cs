@@ -10,24 +10,6 @@ public static class RateLimitingExtensions
     {
         services.AddRateLimiter(options =>
         {
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-            {
-                var userId = context.User.Identity?.Name ?? "anonymous";
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                var partitionKey = context.User.Identity?.IsAuthenticated == true
-                    ? $"user:{userId}"
-                    : $"ip:{ipAddress}";
-
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: partitionKey,
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = context.User.Identity?.IsAuthenticated == true ? 100 : 20,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 2
-                    });
-            });
             options.OnRejected = async (context, cancellationToken) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -46,23 +28,23 @@ public static class RateLimitingExtensions
                 }, cancellationToken);
             };
 
-            // Strict policy for auth endpoints (5 req/min)
-            options.AddPolicy("auth-strict", context =>
+            // Default policy for anonymous/public endpoints (100 req/min)
+            options.AddPolicy("default", context =>
             {
                 var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: $"auth:{ipAddress}",
+                    partitionKey: $"ip:{ipAddress}",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 5,
+                        PermitLimit = 100,
                         Window = TimeSpan.FromMinutes(1),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 0
+                        QueueLimit = 2
                     });
             });
 
-            // Authenticated users (100 req/min)
+            // Authenticated users policy (250 req/min)
             options.AddPolicy("authenticated", context =>
             {
                 var userId = context.User.Identity?.Name ?? "unknown";
@@ -71,26 +53,10 @@ public static class RateLimitingExtensions
                     partitionKey: $"user:{userId}",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 100,
+                        PermitLimit = 250,
                         Window = TimeSpan.FromMinutes(1),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 5
-                    });
-            });
-
-            // Public endpoints (30 req/min)
-            options.AddPolicy("public", context =>
-            {
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: $"public:{ipAddress}",
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 30,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 2
                     });
             });
         });
