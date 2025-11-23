@@ -1,83 +1,63 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using OrderFlow.Shared.Extensions;
 
 namespace OrderFlow.ApiGateway.Extensions;
 
-public static class JwtAuthenticationExtensions
+/// <summary>
+/// Gateway-specific JWT authentication configuration with logging events.
+/// </summary>
+public static class GatewayJwtAuthenticationExtensions
 {
-    public static IServiceCollection AddJwtAuthentication(
+    /// <summary>
+    /// Adds JWT authentication with gateway-specific logging events.
+    /// </summary>
+    public static IServiceCollection AddGatewayJwtAuthentication(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var jwtSecret = configuration["Jwt:Secret"]
-            ?? throw new InvalidOperationException("Jwt:Secret not configured");
-
-        var jwtIssuer = configuration["Jwt:Issuer"]
-            ?? throw new InvalidOperationException("Jwt:Issuer not configured");
-
-        var jwtAudience = configuration["Jwt:Audience"]
-            ?? throw new InvalidOperationException("Jwt:Audience not configured");
-
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        return services.AddJwtAuthentication(configuration, events =>
+        {
+            events.OnAuthenticationFailed = context =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
+
+                logger.LogWarning("Auth failed: {Exception}", context.Exception.Message);
+
+                if (context.Exception is SecurityTokenExpiredException)
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                    NameClaimType = System.Security.Claims.ClaimTypes.Name,
-                    RoleClaimType = System.Security.Claims.ClaimTypes.Role
-                };
+                    context.Response.Headers.Append("Token-Expired", "true");
+                }
 
-                options.Events = new JwtBearerEvents
-                {
-                    OnAuthenticationFailed = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILogger<Program>>();
+                return Task.CompletedTask;
+            };
 
-                        logger.LogWarning("Auth failed: {Exception}", context.Exception.Message);
+            events.OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
 
-                        if (context.Exception is SecurityTokenExpiredException)
-                        {
-                            context.Response.Headers.Append("Token-Expired", "true");
-                        }
+                var userName = context.Principal?.Identity?.Name ?? "Unknown";
+                var userId = context.Principal?.FindFirst("sub")?.Value
+                    ?? context.Principal?.FindFirst("nameid")?.Value
+                    ?? "Unknown";
 
-                        return Task.CompletedTask;
-                    },
-                    OnTokenValidated = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Token validated: {UserName} ({UserId})", userName, userId);
 
-                        var userName = context.Principal?.Identity?.Name ?? "Unknown";
-                        var userId = context.Principal?.FindFirst("sub")?.Value
-                            ?? context.Principal?.FindFirst("nameid")?.Value
-                            ?? "Unknown";
+                return Task.CompletedTask;
+            };
 
-                        logger.LogInformation("Token validated: {UserName} ({UserId})", userName, userId);
+            events.OnChallenge = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
 
-                        return Task.CompletedTask;
-                    },
-                    OnChallenge = context =>
-                    {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("Auth challenge: {Error} - {ErrorDescription}",
+                    context.Error, context.ErrorDescription);
 
-                        logger.LogWarning("Auth challenge: {Error} - {ErrorDescription}",
-                            context.Error, context.ErrorDescription);
-
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-
-        return services;
+                return Task.CompletedTask;
+            };
+        });
     }
 }

@@ -1,9 +1,8 @@
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using OrderFlow.Identity.Features.Auth.V1;
 using OrderFlow.Identity.Services.Common;
-using OrderFlow.Identity.Services.Events;
 using OrderFlow.Shared.Events;
-using OrderFlow.Shared.Redis;
 
 namespace OrderFlow.Identity.Services.Auth;
 
@@ -15,20 +14,20 @@ public class AuthService : IAuthService
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly ITokenService _tokenService;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         ITokenService tokenService,
-        IEventPublisher eventPublisher,
+        IPublishEndpoint publishEndpoint,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
-        _eventPublisher = eventPublisher;
+        _publishEndpoint = publishEndpoint;
         _logger = logger;
     }
 
@@ -136,7 +135,7 @@ public class AuthService : IAuthService
             FirstName: null,
             LastName: null);
 
-        await _eventPublisher.PublishAsync(RedisChannels.UserRegistered, userRegisteredEvent);
+        await _publishEndpoint.Publish(userRegisteredEvent);
 
         var response = new RegisterUser.RegisterUserResponse(
             UserId: user.Id,

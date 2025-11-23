@@ -12,7 +12,7 @@ builder.AddRedisClient("cache");
 builder.Services.AddGatewayCors();
 
 // JWT authentication (validates tokens from Identity service)
-builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddGatewayJwtAuthentication(builder.Configuration);
 
 // Authorization policies (authenticated, admin, customer)
 builder.Services.AddGatewayAuthorizationPolicies();

@@ -1,4 +1,4 @@
-namespace OrderFlow.Identity.Dtos.Common;
+namespace OrderFlow.Shared.Common;
 
 /// <summary>
 /// Pagination metadata for paginated responses

@@ -1,4 +1,4 @@
-namespace OrderFlow.Identity.Services.Common;
+namespace OrderFlow.Shared.Common;
 
 /// <summary>
 /// Base service result for operations without return data

@@ -7,6 +7,7 @@ using OrderFlow.Identity.Dtos.Users.Requests;
 using OrderFlow.Identity.Dtos.Users.Responses;
 using OrderFlow.Identity.Dtos.Users.Queries;
 using OrderFlow.Identity.Dtos.Common;
+using OrderFlow.Shared.Common;
 
 namespace OrderFlow.Identity.Controllers.V2;
 

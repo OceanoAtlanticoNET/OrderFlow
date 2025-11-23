@@ -7,6 +7,7 @@
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.0.0" />
     <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.0.0" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="9.3.1" />
     <PackageVersion Include="Aspire.Hosting.Redis" Version="13.0.0" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.5.2" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.0.0" />
@@ -63,5 +64,11 @@
   </ItemGroup>
   <ItemGroup Label="Hosting">
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="Redis">
+    <PackageVersion Include="StackExchange.Redis" Version="2.9.32" />
+  </ItemGroup>
+  <ItemGroup Label="Messaging">
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.0" />
   </ItemGroup>
 </Project>

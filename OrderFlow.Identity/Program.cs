@@ -9,10 +9,10 @@ using FluentValidation;
 using Asp.Versioning;
 using OrderFlow.Identity.Extensions;
 using OrderFlow.Identity.Services.Auth;
-using OrderFlow.Identity.Services.Events;
 using OrderFlow.Identity.Services.Users;
 using OrderFlow.Identity.Services.Roles;
 using OrderFlow.Shared.Extensions;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,8 +75,22 @@ builder.Services.AddCors(options =>
 // Add PostgreSQL DbContext with Aspire
 builder.AddNpgsqlDbContext<ApplicationDbContext>("identitydb");
 
-// Add Redis for event publishing
-builder.AddRedisClient("cache");
+// Configure MassTransit with RabbitMQ for event publishing
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var configuration = context.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString("messaging");
+
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            cfg.Host(new Uri(connectionString));
+        }
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 // Add ASP.NET Core Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -109,7 +123,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IEventPublisher, RedisEventPublisher>();
 
 // ============================================
 // JWT BEARER AUTHENTICATION

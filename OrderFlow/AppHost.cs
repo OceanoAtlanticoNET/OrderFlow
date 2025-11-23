@@ -16,10 +16,16 @@ var identityDb = postgres.AddDatabase("identitydb");
 var catalogDb = postgres.AddDatabase("catalogdb");
 var ordersDb = postgres.AddDatabase("ordersdb");
 
-// Redis - Distributed cache for rate limiting, sessions, pub/sub events
+// Redis - Distributed cache for rate limiting only
 var redis = builder.AddRedis("cache")
     .WithDataVolume("orderflow-redis-data")
     .WithHostPort(6379)
+    .WithLifetime(ContainerLifetime.Persistent);
+
+// RabbitMQ - Message broker for reliable event-driven communication
+var rabbitmq = builder.AddRabbitMQ("messaging")
+    .WithDataVolume("orderflow-rabbitmq-data")
+    .WithManagementPlugin()
     .WithLifetime(ContainerLifetime.Persistent);
 
 // MailDev - Local SMTP server for development (Web UI on 1080, SMTP on 1025)
@@ -33,15 +39,16 @@ var maildev = builder.AddContainer("maildev", "maildev/maildev")
 // ============================================
 var identityService = builder.AddProject<Projects.OrderFlow_Identity>("orderflow-identity")
     .WithReference(identityDb)
-    .WithReference(redis) // Redis for publishing events
-    .WaitFor(identityDb);
+    .WithReference(rabbitmq)
+    .WaitFor(identityDb)
+    .WaitFor(rabbitmq);
 
-// Notifications Worker - Listens to Redis events and sends emails
+// Notifications Worker - Listens to RabbitMQ events and sends emails
 var notificationsService = builder.AddProject<Projects.OrderFlow_Notifications>("orderflow-notifications")
-    .WithReference(redis) // Redis for subscribing to events
+    .WithReference(rabbitmq)
     .WithEnvironment("Email__SmtpHost", maildev.GetEndpoint("smtp").Property(EndpointProperty.Host))
     .WithEnvironment("Email__SmtpPort", maildev.GetEndpoint("smtp").Property(EndpointProperty.Port))
-    .WaitFor(redis);
+    .WaitFor(rabbitmq);
 
 // Catalog Service - Products and Categories
 var catalogService = builder.AddProject<Projects.OrderFlow_Catalog>("orderflow-catalog")
@@ -51,8 +58,10 @@ var catalogService = builder.AddProject<Projects.OrderFlow_Catalog>("orderflow-c
 // Orders Service - Order management
 var ordersService = builder.AddProject<Projects.OrderFlow_Orders>("orderflow-orders")
     .WithReference(ordersDb)
-    .WithReference(catalogService) // For product validation
-    .WaitFor(ordersDb);
+    .WithReference(rabbitmq)
+    .WithReference(catalogService)
+    .WaitFor(ordersDb)
+    .WaitFor(rabbitmq);
 
 // ============================================
 // API GATEWAY

@@ -1,6 +1,4 @@
-using OrderFlow.Identity.Dtos.Common;
-
-namespace OrderFlow.Identity.Services.Common;
+namespace OrderFlow.Shared.Common;
 
 /// <summary>
 /// Result type for paginated service operations

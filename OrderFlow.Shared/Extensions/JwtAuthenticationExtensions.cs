@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 
 namespace OrderFlow.Shared.Extensions;
@@ -16,9 +17,13 @@ public static class JwtAuthenticationExtensions
     /// Adds JWT Bearer authentication with standard configuration.
     /// Requires Jwt:Secret, Jwt:Issuer, and Jwt:Audience in configuration.
     /// </summary>
+    /// <param name="services">Service collection</param>
+    /// <param name="configuration">Configuration containing JWT settings</param>
+    /// <param name="configureEvents">Optional action to configure JWT Bearer events</param>
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Action<JwtBearerEvents>? configureEvents = null)
     {
         // Use fallback values for build-time/design-time scenarios
         var jwtSecret = configuration["Jwt:Secret"]
@@ -44,8 +49,17 @@ public static class JwtAuthenticationExtensions
                 ValidIssuer = jwtIssuer,
                 ValidAudience = jwtAudience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                ClockSkew = TimeSpan.Zero // Remove default 5 minute tolerance
+                ClockSkew = TimeSpan.Zero, // Remove default 5 minute tolerance
+                NameClaimType = ClaimTypes.Name,
+                RoleClaimType = ClaimTypes.Role
             };
+
+            // Allow custom event configuration
+            if (configureEvents != null)
+            {
+                options.Events = new JwtBearerEvents();
+                configureEvents(options.Events);
+            }
         });
 
         services.AddAuthorization();

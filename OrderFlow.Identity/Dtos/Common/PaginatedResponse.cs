@@ -1,3 +1,5 @@
+using OrderFlow.Shared.Common;
+
 namespace OrderFlow.Identity.Dtos.Common;
 
 /// <summary>

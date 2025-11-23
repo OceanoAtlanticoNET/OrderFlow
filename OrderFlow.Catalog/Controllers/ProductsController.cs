@@ -1,14 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using OrderFlow.Catalog.Data;
 using OrderFlow.Catalog.DTOs;
-using OrderFlow.Catalog.Entities;
+using OrderFlow.Catalog.Services;
 
 namespace OrderFlow.Catalog.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class ProductsController(CatalogDbContext db) : ControllerBase
+public class ProductsController(IProductService productService, IStockService stockService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductListResponse>>> GetAll(
@@ -16,106 +14,82 @@ public class ProductsController(CatalogDbContext db) : ControllerBase
         [FromQuery] bool? isActive = null,
         [FromQuery] string? search = null)
     {
-        var query = db.Products.Include(p => p.Category).AsQueryable();
-
-        if (categoryId.HasValue)
-            query = query.Where(p => p.CategoryId == categoryId.Value);
-
-        if (isActive.HasValue)
-            query = query.Where(p => p.IsActive == isActive.Value);
-
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => p.Name.Contains(search) || (p.Description != null && p.Description.Contains(search)));
-
-        var products = await query
-            .Select(p => new ProductListResponse(
-                p.Id, p.Name, p.Price, p.Stock, p.IsActive, p.Category!.Name))
-            .ToListAsync();
-
-        return Ok(products);
+        var result = await productService.GetAllAsync(categoryId, isActive, search);
+        return Ok(result.Data);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProductResponse>> GetById(int id)
     {
-        var product = await db.Products
-            .Include(p => p.Category)
-            .Where(p => p.Id == id)
-            .Select(p => new ProductResponse(
-                p.Id, p.Name, p.Description, p.Price, p.Stock, p.IsActive, p.CategoryId, p.Category!.Name))
-            .FirstOrDefaultAsync();
+        var result = await productService.GetByIdAsync(id);
 
-        if (product is null)
+        if (!result.Succeeded)
             return NotFound();
 
-        return Ok(product);
+        return Ok(result.Data);
     }
 
     [HttpPost]
     public async Task<ActionResult<ProductResponse>> Create(CreateProductRequest request)
     {
-        var categoryExists = await db.Categories.AnyAsync(c => c.Id == request.CategoryId);
-        if (!categoryExists)
-            return BadRequest("Category not found");
+        var result = await productService.CreateAsync(request);
 
-        var product = new Product
-        {
-            Name = request.Name,
-            Description = request.Description,
-            Price = request.Price,
-            Stock = request.Stock,
-            CategoryId = request.CategoryId
-        };
+        if (!result.Succeeded)
+            return BadRequest(string.Join(", ", result.Errors));
 
-        db.Products.Add(product);
-        await db.SaveChangesAsync();
-
-        var category = await db.Categories.FindAsync(request.CategoryId);
-        var response = new ProductResponse(
-            product.Id, product.Name, product.Description, product.Price,
-            product.Stock, product.IsActive, product.CategoryId, category!.Name);
-
-        return CreatedAtAction(nameof(GetById), new { id = product.Id }, response);
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
     }
 
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ProductResponse>> Update(int id, UpdateProductRequest request)
     {
-        var product = await db.Products.FindAsync(id);
-        if (product is null)
-            return NotFound();
+        var result = await productService.UpdateAsync(id, request);
 
-        var categoryExists = await db.Categories.AnyAsync(c => c.Id == request.CategoryId);
-        if (!categoryExists)
-            return BadRequest("Category not found");
+        if (!result.Succeeded)
+        {
+            if (result.Errors.Any(e => e.Contains("not found")))
+                return NotFound();
 
-        product.Name = request.Name;
-        product.Description = request.Description;
-        product.Price = request.Price;
-        product.Stock = request.Stock;
-        product.IsActive = request.IsActive;
-        product.CategoryId = request.CategoryId;
-        product.UpdatedAt = DateTime.UtcNow;
+            return BadRequest(string.Join(", ", result.Errors));
+        }
 
-        await db.SaveChangesAsync();
-
-        var category = await db.Categories.FindAsync(request.CategoryId);
-        return Ok(new ProductResponse(
-            product.Id, product.Name, product.Description, product.Price,
-            product.Stock, product.IsActive, product.CategoryId, category!.Name));
+        return Ok(result.Data);
     }
 
     [HttpPatch("{id:int}/stock")]
     public async Task<IActionResult> UpdateStock(int id, UpdateStockRequest request)
     {
-        var product = await db.Products.FindAsync(id);
-        if (product is null)
+        var result = await productService.UpdateStockAsync(id, request.Quantity);
+
+        if (!result.Succeeded)
             return NotFound();
 
-        product.Stock = request.Quantity;
-        product.UpdatedAt = DateTime.UtcNow;
+        return NoContent();
+    }
 
-        await db.SaveChangesAsync();
+    [HttpPost("{id:int}/reserve")]
+    public async Task<IActionResult> ReserveStock(int id, StockOperationRequest request)
+    {
+        var result = await stockService.ReserveStockAsync(id, request.Quantity);
+
+        if (!result.Succeeded)
+        {
+            if (result.Errors.Any(e => e.Contains("not found")))
+                return NotFound(string.Join(", ", result.Errors));
+
+            return Conflict(string.Join(", ", result.Errors));
+        }
+
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/release")]
+    public async Task<IActionResult> ReleaseStock(int id, StockOperationRequest request)
+    {
+        var result = await stockService.ReleaseStockAsync(id, request.Quantity);
+
+        if (!result.Succeeded)
+            return NotFound(string.Join(", ", result.Errors));
 
         return NoContent();
     }
@@ -123,12 +97,10 @@ public class ProductsController(CatalogDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var product = await db.Products.FindAsync(id);
-        if (product is null)
-            return NotFound();
+        var result = await productService.DeleteAsync(id);
 
-        db.Products.Remove(product);
-        await db.SaveChangesAsync();
+        if (!result.Succeeded)
+            return NotFound();
 
         return NoContent();
     }

@@ -34,3 +34,5 @@ public record UpdateProductRequest(
     int CategoryId);
 
 public record UpdateStockRequest(int Quantity);
+
+public record StockOperationRequest(int Quantity);
