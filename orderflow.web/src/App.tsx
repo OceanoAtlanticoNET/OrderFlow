@@ -12,6 +12,8 @@ import { ChangePasswordPage } from "@/features/profile/ChangePasswordPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { RoleRedirect } from "@/components/RoleRedirect";
+// Layouts
+import { PublicLayout, AuthLayout, DashboardLayout, AdminLayout } from "@/components/layout";
 // Catalog
 import CatalogPage from "@/features/catalog/CatalogPage";
 import ProductDetailPage from "@/features/catalog/ProductDetailPage";
@@ -30,140 +32,43 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* Auth routes - Centered card layout */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
 
-        {/* Catalog - Public */}
-        <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/catalog/:productId" element={<ProductDetailPage />} />
+        {/* Public routes - Header only */}
+        <Route element={<PublicLayout />}>
+          <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/catalog/:productId" element={<ProductDetailPage />} />
+        </Route>
 
         {/* Root redirects based on role */}
         <Route path="/" element={<RoleRedirect />} />
 
-        {/* Admin routes */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminRoute>
-              <UserManagement />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users/:userId"
-          element={
-            <AdminRoute>
-              <UserDetail />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/roles"
-          element={
-            <AdminRoute>
-              <RoleManagement />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/categories"
-          element={
-            <AdminRoute>
-              <AdminCategoriesPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/products"
-          element={
-            <AdminRoute>
-              <AdminProductsPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/orders"
-          element={
-            <AdminRoute>
-              <AdminOrdersPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/orders/:orderId"
-          element={
-            <AdminRoute>
-              <AdminOrderDetailPage />
-            </AdminRoute>
-          }
-        />
+        {/* Protected client routes - Header + Sidebar */}
+        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} />
+          <Route path="/profile/password" element={<ChangePasswordPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+        </Route>
 
-        {/* Client routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/edit"
-          element={
-            <ProtectedRoute>
-              <EditProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/password"
-          element={
-            <ProtectedRoute>
-              <ChangePasswordPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute>
-              <CartPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <OrdersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/orders/:orderId"
-          element={
-            <ProtectedRoute>
-              <OrderDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Admin routes - Header + Admin Sidebar */}
+        <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/users/:userId" element={<UserDetail />} />
+          <Route path="/admin/roles" element={<RoleManagement />} />
+          <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+          <Route path="/admin/products" element={<AdminProductsPage />} />
+          <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route path="/admin/orders/:orderId" element={<AdminOrderDetailPage />} />
+        </Route>
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -173,4 +78,3 @@ function App() {
 }
 
 export default App;
-

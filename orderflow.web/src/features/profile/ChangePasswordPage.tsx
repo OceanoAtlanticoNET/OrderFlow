@@ -66,8 +66,7 @@ export function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 p-8">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Change Password</h1>
           <Button variant="outline" onClick={() => navigate("/profile")}>
@@ -157,7 +156,6 @@ export function ChangePasswordPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

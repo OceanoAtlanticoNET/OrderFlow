@@ -53,7 +53,7 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <p className="text-muted-foreground">Loading product...</p>
       </div>
     );
@@ -61,22 +61,19 @@ export default function ProductDetailPage() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
-            {error || 'Product not found'}
-          </div>
-          <Button variant="outline" asChild>
-            <Link to="/catalog">Back to Catalog</Link>
-          </Button>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
+          {error || 'Product not found'}
         </div>
+        <Button variant="outline" asChild>
+          <Link to="/catalog">Back to Catalog</Link>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <Button variant="outline" asChild>
             <Link to="/catalog">← Back to Catalog</Link>
@@ -156,7 +153,6 @@ export default function ProductDetailPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

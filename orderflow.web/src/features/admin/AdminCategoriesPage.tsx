@@ -87,13 +87,12 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Manage Categories</h1>
-            <p className="text-muted-foreground mt-2">Create and manage product categories</p>
-          </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Manage Categories</h1>
+          <p className="text-muted-foreground mt-2">Create and manage product categories</p>
+        </div>
           <Button onClick={() => handleOpenDialog()}>Add Category</Button>
         </div>
 
@@ -195,7 +194,6 @@ export default function AdminCategoriesPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
 }

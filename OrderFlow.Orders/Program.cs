@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using OrderFlow.Orders.Data;
 using OrderFlow.Shared.Extensions;
@@ -18,7 +19,11 @@ builder.Services.AddHttpClient("catalog", client =>
 // JWT Authentication (shared across all microservices)
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

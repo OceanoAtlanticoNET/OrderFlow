@@ -27,7 +27,7 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="text-lg">Loading...</div>
       </div>
     );
@@ -35,15 +35,14 @@ export function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="text-lg text-destructive">Failed to load profile</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-8">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">My Profile</h1>
           <div className="flex gap-2">
@@ -129,7 +128,6 @@ export function ProfilePage() {
             </Button>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

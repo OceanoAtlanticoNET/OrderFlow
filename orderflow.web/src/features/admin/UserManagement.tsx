@@ -33,7 +33,7 @@ export function UserManagement() {
   const { getRoles } = useRoles();
 
   const [users, setUsers] = useState<UserResponse[]>([]);
-  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [_roles, setRoles] = useState<RoleResponse[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -146,8 +146,7 @@ export function UserManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6 p-8">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">User Management</h1>
@@ -282,7 +281,6 @@ export function UserManagement() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
       {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -381,6 +379,6 @@ export function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+  </div>
   );
 }

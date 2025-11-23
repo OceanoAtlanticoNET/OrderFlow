@@ -76,12 +76,11 @@ export default function CatalogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Product Catalog</h1>
-          <p className="text-muted-foreground mt-2">Browse our products and add them to your cart</p>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Product Catalog</h1>
+        <p className="text-muted-foreground mt-2">Browse our products and add them to your cart</p>
+      </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -168,7 +167,6 @@ export default function CatalogPage() {
             })}
           </div>
         )}
-      </div>
     </div>
   );
 }

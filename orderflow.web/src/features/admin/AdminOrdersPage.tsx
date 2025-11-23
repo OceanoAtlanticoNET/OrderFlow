@@ -59,13 +59,12 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Manage Orders</h1>
-            <p className="text-muted-foreground mt-2">View and manage all customer orders</p>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Manage Orders</h1>
+          <p className="text-muted-foreground mt-2">View and manage all customer orders</p>
+        </div>
           <div className="w-48">
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger>
@@ -136,7 +135,6 @@ export default function AdminOrdersPage() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

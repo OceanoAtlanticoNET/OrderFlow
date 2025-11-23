@@ -54,17 +54,16 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
-            <p className="text-muted-foreground mt-2">View and track your orders</p>
-          </div>
-          <Button asChild>
-            <Link to="/catalog">Shop Now</Link>
-          </Button>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
+          <p className="text-muted-foreground mt-2">View and track your orders</p>
         </div>
+        <Button asChild>
+          <Link to="/catalog">Shop Now</Link>
+        </Button>
+      </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
@@ -128,7 +127,6 @@ export default function OrdersPage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 }

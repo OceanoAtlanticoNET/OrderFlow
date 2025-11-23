@@ -119,8 +119,7 @@ export function RoleManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 p-8">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Role Management</h1>
@@ -185,7 +184,6 @@ export function RoleManagement() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Create Role Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -294,6 +292,6 @@ export function RoleManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+  </div>
   );
 }

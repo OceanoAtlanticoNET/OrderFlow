@@ -67,26 +67,23 @@ export default function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-foreground mb-8">Shopping Cart</h1>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">Your cart is empty</p>
-              <Button asChild>
-                <Link to="/catalog">Browse Products</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-foreground mb-8">Shopping Cart</h1>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">Your cart is empty</p>
+            <Button asChild>
+              <Link to="/catalog">Browse Products</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-foreground mb-8">Shopping Cart</h1>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-foreground mb-8">Shopping Cart</h1>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
@@ -229,7 +226,6 @@ export default function CartPage() {
             </Card>
           </div>
         </div>
-      </div>
     </div>
   );
 }

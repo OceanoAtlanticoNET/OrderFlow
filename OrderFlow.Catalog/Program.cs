@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using OrderFlow.Catalog.Data;
 using OrderFlow.Shared.Extensions;
@@ -12,7 +13,11 @@ builder.AddNpgsqlDbContext<CatalogDbContext>("catalogdb");
 // JWT Authentication (shared across all microservices)
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

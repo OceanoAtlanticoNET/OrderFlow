@@ -90,7 +90,7 @@ export default function AdminOrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <p className="text-muted-foreground">Loading order...</p>
       </div>
     );
@@ -98,15 +98,13 @@ export default function AdminOrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
-            {error || 'Order not found'}
-          </div>
-          <Button variant="outline" asChild>
-            <Link to="/admin/orders">Back to Orders</Link>
-          </Button>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
+          {error || 'Order not found'}
         </div>
+        <Button variant="outline" asChild>
+          <Link to="/admin/orders">Back to Orders</Link>
+        </Button>
       </div>
     );
   }
@@ -114,13 +112,12 @@ export default function AdminOrderDetailPage() {
   const availableTransitions = statusTransitions[order.status];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button variant="outline" asChild>
-            <Link to="/admin/orders">← Back to Orders</Link>
-          </Button>
-        </div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <Button variant="outline" asChild>
+          <Link to="/admin/orders">← Back to Orders</Link>
+        </Button>
+      </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6">
@@ -218,7 +215,6 @@ export default function AdminOrderDetailPage() {
             </CardFooter>
           </Card>
         </div>
-      </div>
     </div>
   );
 }

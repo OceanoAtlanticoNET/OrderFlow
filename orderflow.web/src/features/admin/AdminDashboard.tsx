@@ -1,6 +1,4 @@
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,23 +9,14 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 
 export function AdminDashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Manage your store</p>
+      </div>
 
         <Card>
           <CardHeader>
@@ -130,6 +119,5 @@ export function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </div>
   );
 }
