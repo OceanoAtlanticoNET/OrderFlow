@@ -7,11 +7,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 // PostgreSQL - Database for microservices
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume("orderflow-postgres-data")
+    .WithPgAdmin()
     .WithHostPort(5432)
     .WithLifetime(ContainerLifetime.Persistent);
 
-// Identity database
+// Databases for microservices
 var identityDb = postgres.AddDatabase("identitydb");
+var catalogDb = postgres.AddDatabase("catalogdb");
+var ordersDb = postgres.AddDatabase("ordersdb");
 
 // Redis - Distributed cache for rate limiting, sessions, pub/sub events
 var redis = builder.AddRedis("cache")
@@ -40,6 +43,17 @@ var notificationsService = builder.AddProject<Projects.OrderFlow_Notifications>(
     .WithEnvironment("Email__SmtpPort", maildev.GetEndpoint("smtp").Property(EndpointProperty.Port))
     .WaitFor(redis);
 
+// Catalog Service - Products and Categories
+var catalogService = builder.AddProject<Projects.OrderFlow_Catalog>("orderflow-catalog")
+    .WithReference(catalogDb)
+    .WaitFor(catalogDb);
+
+// Orders Service - Order management
+var ordersService = builder.AddProject<Projects.OrderFlow_Orders>("orderflow-orders")
+    .WithReference(ordersDb)
+    .WithReference(catalogService) // For product validation
+    .WaitFor(ordersDb);
+
 // ============================================
 // API GATEWAY
 // ============================================
@@ -47,8 +61,12 @@ var notificationsService = builder.AddProject<Projects.OrderFlow_Notifications>(
 // It handles authentication, authorization, rate limiting, and routes to microservices
 var apiGateway = builder.AddProject<Projects.OrderFlow_ApiGateway>("orderflow-apigateway")
     .WithReference(redis) // Redis for rate limiting and caching
-    .WithReference(identityService) // Gateway needs to route to Identity Service
-    .WaitFor(identityService);
+    .WithReference(identityService)
+    .WithReference(catalogService)
+    .WithReference(ordersService)
+    .WaitFor(identityService)
+    .WaitFor(catalogService)
+    .WaitFor(ordersService);
 
 // ============================================
 // FRONTEND - React App
@@ -58,6 +76,7 @@ var frontendApp = builder.AddNpmApp("orderflow-web", "../orderflow.web", "dev")
     .WithReference(apiGateway) // Frontend talks to Gateway, not to services directly
     .WithEnvironment("VITE_API_GATEWAY_URL", apiGateway.GetEndpoint("https")) // Gateway URL for frontend
     .WithHttpEndpoint(env: "VITE_PORT") // Vite uses VITE_PORT environment variable
+    .WaitFor(apiGateway)
     .WithExternalHttpEndpoints() // Make endpoint accessible via Aspire dashboard
     .PublishAsDockerFile();
 

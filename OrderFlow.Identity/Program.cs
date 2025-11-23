@@ -6,16 +6,13 @@ using OrderFlow.Identity.Features.Auth.V1;
 using OrderFlow.Identity.Features.Users.V1;
 using OrderFlow.Identity.Features.Roles.V1;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Asp.Versioning;
-//
 using OrderFlow.Identity.Extensions;
 using OrderFlow.Identity.Services.Auth;
 using OrderFlow.Identity.Services.Events;
 using OrderFlow.Identity.Services.Users;
 using OrderFlow.Identity.Services.Roles;
+using OrderFlow.Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -48,7 +48,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <Link to="/admin/users">
               <CardHeader>
@@ -76,6 +76,54 @@ export function AdminDashboard() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   Create, edit, and delete roles
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Link to="/admin/categories">
+              <CardHeader>
+                <CardTitle>Category Management</CardTitle>
+                <CardDescription>
+                  Manage product categories
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Create, edit, and delete product categories
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Link to="/admin/products">
+              <CardHeader>
+                <CardTitle>Product Management</CardTitle>
+                <CardDescription>
+                  Manage product catalog
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Create, edit, and manage products inventory
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Link to="/admin/orders">
+              <CardHeader>
+                <CardTitle>Order Management</CardTitle>
+                <CardDescription>
+                  Manage customer orders
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  View, update status, and manage all orders
                 </p>
               </CardContent>
             </Link>

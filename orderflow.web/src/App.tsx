@@ -12,6 +12,19 @@ import { ChangePasswordPage } from "@/features/profile/ChangePasswordPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { RoleRedirect } from "@/components/RoleRedirect";
+// Catalog
+import CatalogPage from "@/features/catalog/CatalogPage";
+import ProductDetailPage from "@/features/catalog/ProductDetailPage";
+// Cart
+import CartPage from "@/features/cart/CartPage";
+// Orders
+import OrdersPage from "@/features/orders/OrdersPage";
+import OrderDetailPage from "@/features/orders/OrderDetailPage";
+// Admin Catalog & Orders
+import AdminCategoriesPage from "@/features/admin/AdminCategoriesPage";
+import AdminProductsPage from "@/features/admin/AdminProductsPage";
+import AdminOrdersPage from "@/features/admin/AdminOrdersPage";
+import AdminOrderDetailPage from "@/features/admin/AdminOrderDetailPage";
 
 function App() {
   return (
@@ -20,6 +33,10 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Catalog - Public */}
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/catalog/:productId" element={<ProductDetailPage />} />
 
         {/* Root redirects based on role */}
         <Route path="/" element={<RoleRedirect />} />
@@ -57,6 +74,38 @@ function App() {
             </AdminRoute>
           }
         />
+        <Route
+          path="/admin/categories"
+          element={
+            <AdminRoute>
+              <AdminCategoriesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <AdminRoute>
+              <AdminProductsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <AdminRoute>
+              <AdminOrdersPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/orders/:orderId"
+          element={
+            <AdminRoute>
+              <AdminOrderDetailPage />
+            </AdminRoute>
+          }
+        />
 
         {/* Client routes */}
         <Route
@@ -88,6 +137,30 @@ function App() {
           element={
             <ProtectedRoute>
               <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <CartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute>
+              <OrderDetailPage />
             </ProtectedRoute>
           }
         />
