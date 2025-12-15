@@ -1,6 +1,14 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 // ============================================
+// SHARED JWT CONFIGURATION
+// ============================================
+// All services must use the same JWT settings for token validation
+var jwtSecret = builder.AddParameter("jwt-secret", secret: true);
+var jwtIssuer = "OrderFlow.Identity";
+var jwtAudience = "OrderFlow.Client";
+
+// ============================================
 // INFRASTRUCTURE
 // ============================================
 
@@ -40,6 +48,10 @@ var maildev = builder.AddContainer("maildev", "maildev/maildev")
 var identityService = builder.AddProject<Projects.OrderFlow_Identity>("orderflow-identity")
     .WithReference(identityDb)
     .WithReference(rabbitmq)
+    .WithEnvironment("Jwt__Secret", jwtSecret)
+    .WithEnvironment("Jwt__Issuer", jwtIssuer)
+    .WithEnvironment("Jwt__Audience", jwtAudience)
+    .WithEnvironment("Jwt__ExpiryInMinutes", "60")
     .WaitFor(identityDb)
     .WaitFor(rabbitmq);
 
@@ -53,6 +65,9 @@ var notificationsService = builder.AddProject<Projects.OrderFlow_Notifications>(
 // Catalog Service - Products and Categories
 var catalogService = builder.AddProject<Projects.OrderFlow_Catalog>("orderflow-catalog")
     .WithReference(catalogDb)
+    .WithEnvironment("Jwt__Secret", jwtSecret)
+    .WithEnvironment("Jwt__Issuer", jwtIssuer)
+    .WithEnvironment("Jwt__Audience", jwtAudience)
     .WaitFor(catalogDb);
 
 // Orders Service - Order management
@@ -60,6 +75,9 @@ var ordersService = builder.AddProject<Projects.OrderFlow_Orders>("orderflow-ord
     .WithReference(ordersDb)
     .WithReference(rabbitmq)
     .WithReference(catalogService)
+    .WithEnvironment("Jwt__Secret", jwtSecret)
+    .WithEnvironment("Jwt__Issuer", jwtIssuer)
+    .WithEnvironment("Jwt__Audience", jwtAudience)
     .WaitFor(ordersDb)
     .WaitFor(rabbitmq);
 
@@ -73,6 +91,9 @@ var apiGateway = builder.AddProject<Projects.OrderFlow_ApiGateway>("orderflow-ap
     .WithReference(identityService)
     .WithReference(catalogService)
     .WithReference(ordersService)
+    .WithEnvironment("Jwt__Secret", jwtSecret)
+    .WithEnvironment("Jwt__Issuer", jwtIssuer)
+    .WithEnvironment("Jwt__Audience", jwtAudience)
     .WaitFor(identityService)
     .WaitFor(catalogService)
     .WaitFor(ordersService);

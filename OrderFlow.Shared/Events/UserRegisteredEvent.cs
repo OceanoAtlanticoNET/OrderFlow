@@ -9,3 +9,4 @@ public sealed record UserRegisteredEvent(
     public Guid EventId { get; init; } = Guid.NewGuid();
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 }
+

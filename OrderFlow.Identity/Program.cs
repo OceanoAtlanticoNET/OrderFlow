@@ -1,4 +1,4 @@
-using Scalar.AspNetCore;
+    using Scalar.AspNetCore;
 using OrderFlow.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
